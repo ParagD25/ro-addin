@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R&amp;O Forecast</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script src="ro-core.js"></script>
+<style>
+  :root {
+    --leaf: #2F7A28;        /* buttons, open months */
+    --leaf-dark: #23601E;
+    --brand: #4BA23F;       /* Prospiant green */
+    --ink: #1C2B1A;
+    --quiet: #5F6B5D;
+    --sage: #EEF4EC;
+    --line: #D5DED2;
+    --amber: #B26B00;
+    --amber-bg: #FFF4DB;
+    --brick: #B42318;
+    --brick-bg: #FDECEA;
+    --ok-bg: #E7F3E4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 16px 24px;
+    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 14px; line-height: 1.45; color: var(--ink); background: #FFFFFF;
+  }
+  h1 { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .conn { display: flex; align-items: center; gap: 8px; margin: 4px 0 16px; color: var(--quiet); font-size: 12.5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #B9C2B6; flex: none; }
+  .dot.on { background: var(--brand); }
+  .dot.off { background: var(--brick); }
+
+  /* the project on the form */
+  .form-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; background: #FBFDFA; }
+  .proj { font-size: 16px; font-weight: 600; margin: 0 0 2px; overflow-wrap: anywhere; }
+  .meta { color: var(--quiet); font-size: 12.5px; margin: 0; }
+  .flag { color: var(--brick); font-size: 12.5px; font-weight: 600; margin: 6px 0 0; }
+  .strip { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin: 14px 0 6px; }
+  .m { height: 34px; border-radius: 4px; display: flex; align-items: flex-end; justify-content: center;
+       padding-bottom: 3px; font-size: 11px; font-weight: 600; border: 1.5px solid var(--leaf); color: var(--leaf); background: #FFFFFF; }
+  .m.locked { border-color: transparent; color: #8C958A;
+       background: repeating-linear-gradient(135deg, #ECEFEB 0 4px, #E1E6DF 4px 8px); }
+  .m.edited { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+  .strip-note { font-size: 12px; color: var(--quiet); margin: 0; }
+  .key { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; font-size: 11.5px; color: var(--quiet); }
+  .key span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .key .k-locked::before { background: #E1E6DF; }
+  .key .k-open::before { border: 1.5px solid var(--leaf); width: 7px; height: 7px; }
+  .key .k-edit::before { background: var(--amber-bg); border: 1.5px solid var(--amber); width: 7px; height: 7px; }
+  .empty { color: var(--quiet); margin: 0; }
+
+  /* actions */
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; }
+  button {
+    font: inherit; font-weight: 600; border-radius: 8px; padding: 10px 12px; cursor: pointer;
+    border: 1px solid var(--line); background: #FFFFFF; color: var(--ink);
+  }
+  button.primary { grid-column: 1 / -1; background: var(--leaf); border-color: var(--leaf); color: #FFFFFF; padding: 13px; font-size: 15px; }
+  button.primary:hover:not(:disabled) { background: var(--leaf-dark); }
+  button:hover:not(:disabled) { border-color: var(--leaf); }
+  button:disabled { opacity: 0.55; cursor: progress; }
+  button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+  /* message */
+  .msg { border-left: 4px solid var(--line); background: var(--sage); border-radius: 0 8px 8px 0; padding: 10px 12px; }
+  .msg.ok { border-color: var(--brand); background: var(--ok-bg); }
+  .msg.warn { border-color: var(--amber); background: var(--amber-bg); }
+  .msg.error { border-color: var(--brick); background: var(--brick-bg); }
+  .msg.busy { border-color: #C9B458; background: #FFF9E0; }
+  .msg h2 { font-size: 14px; margin: 0; font-weight: 600; }
+  .msg ul { margin: 6px 0 0; padding-left: 18px; }
+  .msg li { margin: 2px 0; overflow-wrap: anywhere; }
+
+  details { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 12px; }
+  summary { cursor: pointer; font-weight: 600; }
+  label { display: block; font-size: 12.5px; font-weight: 600; margin: 12px 0 4px; }
+  input { width: 100%; font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; }
+  .help { font-size: 12px; color: var(--quiet); margin: 4px 0 0; }
+  details button { margin-top: 12px; width: 100%; }
+  .outside { padding: 24px 4px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .msg { transition: background-color .2s ease; }
+  }
+</style>
+</head>
+<body>
+  <main id="app" hidden>
+    <h1>R&amp;O Forecast</h1>
+    <div class="conn"><span class="dot" id="dot"></span><span id="connText">Checking connection…</span></div>
+
+    <section class="form-card" aria-label="Project on the form" id="formCard">
+      <p class="empty">Reading the form…</p>
+    </section>
+
+    <div class="actions">
+      <button class="primary" id="btnSubmit">Submit to database</button>
+      <button id="btnRefresh">Refresh data</button>
+      <button id="btnClear">Clear form</button>
+    </div>
+
+    <div class="msg" id="msg" role="status" aria-live="polite">
+      <h2 id="msgTitle">Ready</h2>
+      <ul id="msgLines"><li>Pick a segment and project on the Input sheet, change the open months, then submit.</li></ul>
+    </div>
+
+    <details id="settings">
+      <summary>Connection settings</summary>
+      <label for="url">Supabase Project URL</label>
+      <input id="url" type="url" placeholder="https://abcd1234.supabase.co" autocomplete="off" spellcheck="false">
+      <label for="key">Supabase publishable key</label>
+      <input id="key" type="text" placeholder="sb_publishable_…" autocomplete="off" spellcheck="false">
+      <p class="help">Find both in Supabase under Project Settings. Never paste the secret key here.</p>
+      <button id="btnSave">Save and connect</button>
+    </details>
+  </main>
+
+  <div class="outside" id="outside" hidden>
+    <h1>R&amp;O Forecast</h1>
+    <p>This panel only works inside Excel. Open RandO_Forecast_Input.xlsx in Excel for the web, then open the panel from the Home tab.</p>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var busy = false;
+  var LETTERS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function show(res) {
+    var box = $("msg");
+    box.className = "msg " + (res.kind || "");
+    $("msgTitle").textContent = res.title;
+    $("msgLines").innerHTML = (res.lines || []).map(function (l) { return "<li>" + esc(l) + "</li>"; }).join("");
+  }
+
+  function setConn(state, text) {
+    $("dot").className = "dot " + state;
+    $("connText").textContent = text;
+  }
+
+  async function renderForm() {
+    var f;
+    try { f = await RO.readForm(); } catch (e) { return; }
+    var card = $("formCard");
+    if (!f) { card.innerHTML = '<p class="empty">This workbook has no Input sheet. Open RandO_Forecast_Input.xlsx.</p>'; return; }
+    var head;
+    if (!f.name) {
+      head = '<p class="proj">No project selected</p><p class="meta">' +
+        (f.segment ? esc(f.segment) + ". " : "") + "Pick a project name on the Input sheet.</p>";
+    } else {
+      var bits = [f.segment, f.type, f.id ? "ID " + f.id : ""].filter(Boolean).map(esc).join(", ");
+      head = '<p class="proj">' + esc(f.name) + '</p><p class="meta">' + bits + "</p>";
+      if (f.type === "Existing" && !f.found) { head += '<p class="flag">Not found in this segment. Pick it from the list.</p>'; }
+      if (f.type === "New" && f.found) { head += '<p class="flag">This name already exists. Switch to Existing.</p>'; }
+    }
+    var strip = '<div class="strip" aria-hidden="true">' + f.months.map(function (m, i) {
+      return '<div class="m' + (m.locked ? " locked" : m.edited ? " edited" : "") + '" title="' +
+        RO.MONTHS[i] + (m.locked ? ": locked" : m.edited ? ": edited by you" : ": open") + '">' + LETTERS[i] + "</div>";
+    }).join("") + "</div>";
+    var edited = f.months.filter(function (m) { return m.edited; }).length;
+    var note;
+    if (!f.roMonth) { note = "Pick the R&O month to see which months are locked."; }
+    else if (f.roMonth === 1) { note = "R&O month 1: every month is open."; }
+    else { note = "R&O month " + f.roMonth + ": January to " + RO.MONTHS[f.roMonth - 2] + " locked."; }
+    if (edited) { note += " " + edited + (edited === 1 ? " month" : " months") + " edited."; }
+    card.innerHTML = head + strip + '<p class="strip-note">' + esc(note) + "</p>" +
+      '<div class="key"><span class="k-locked">Locked</span><span class="k-open">Open</span><span class="k-edit">Edited by you</span></div>';
+  }
+
+  async function run(action, busyText) {
+    if (busy) { return; }
+    busy = true;
+    ["btnSubmit", "btnRefresh", "btnClear", "btnSave"].forEach(function (id) { $(id).disabled = true; });
+    show({ kind: "busy", title: busyText, lines: [] });
+    var res;
+    try {
+      res = await action();
+    } catch (e) {
+      res = RO.result("error", "That didn't work", [RO.errorText(e)]);
+      RO.writeStatusOnly(res);
+    }
+    show(res);
+    if (res.kind === "ok" || res.kind === "warn") {
+      var s = await RO.readSettings().catch(function () { return null; });
+      setConn("on", "Connected" + (s && s.lastRefresh ? ". Data as of " + s.lastRefresh : ""));
+    } else if (/reach the database|missing|error 40|error 5/.test(res.lines.join(" "))) {
+      setConn("off", "Not connected");
+      if (/missing/.test(res.lines.join(" "))) { $("settings").open = true; }
+    }
+    busy = false;
+    ["btnSubmit", "btnRefresh", "btnClear", "btnSave"].forEach(function (id) { $(id).disabled = false; });
+    renderForm();
+  }
+
+  Office.onReady(async function (info) {
+    if (info.host !== Office.HostType.Excel) { $("outside").hidden = false; return; }
+    $("app").hidden = false;
+
+    $("btnSubmit").addEventListener("click", function () { run(RO.submit, "Submitting…"); });
+    $("btnRefresh").addEventListener("click", function () { run(RO.refresh, "Loading the latest data…"); });
+    $("btnClear").addEventListener("click", function () { run(RO.clearForm, "Clearing…"); });
+    $("btnSave").addEventListener("click", function () {
+      run(function () { return RO.saveSettings($("url").value, $("key").value); }, "Connecting…");
+    });
+
+    try {
+      var s = await RO.readSettings();
+      $("url").value = s.url; $("key").value = s.key;
+      if (s.missing) {
+        setConn("off", "Wrong workbook");
+        show(RO.result("error", "Open the R&O workbook", ["This panel needs RandO_Forecast_Input.xlsx."]));
+      } else if (!s.url || !s.key) {
+        setConn("off", "Not connected yet");
+        $("settings").open = true;
+        show(RO.result("info", "Connect to your database", ["Paste your Supabase Project URL and publishable key below, then press Save and connect."]));
+      } else {
+        setConn("", s.lastRefresh && s.lastRefresh !== "never" ? "Data as of " + s.lastRefresh + ". Refresh to check the connection" : "Not refreshed yet. Press Refresh data");
+      }
+    } catch (e) { /* keep defaults */ }
+    renderForm();
+    RO.watchForm(renderForm);
+  });
+})();
+</script>
+</body>
+</html>

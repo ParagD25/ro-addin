@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R&amp;O Forecast add-in: setup</title>
+<link rel="icon" href="icon-32.png">
+<style>
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color: #1C2B1A; background: #F6F9F5; line-height: 1.55; }
+  main { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+  .mark { width: 48px; height: 48px; display: block; margin-bottom: 16px; }
+  h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .lead { font-size: 17px; color: #4A5747; margin: 0 0 32px; }
+  ol { padding-left: 22px; }
+  li { margin: 0 0 20px; }
+  li strong { display: block; font-size: 16px; }
+  button { font: inherit; font-weight: 600; font-size: 16px; padding: 12px 18px; border-radius: 8px; border: 1px solid #2F7A28; background: #2F7A28; color: #fff; cursor: pointer; margin-top: 8px; }
+  button.alt { background: #fff; color: #2F7A28; font-size: 14px; padding: 8px 14px; }
+  button:focus-visible { outline: 2px solid #4BA23F; outline-offset: 2px; }
+  code { background: #E6EEE3; padding: 1px 6px; border-radius: 4px; font-size: 14px; overflow-wrap: anywhere; }
+  .check { padding: 12px 14px; border-radius: 8px; background: #E7F3E4; margin: 0 0 28px; }
+  .check.bad { background: #FDECEA; }
+  .small { font-size: 14px; color: #5F6B5D; }
+</style>
+</head>
+<body>
+<main>
+  <img class="mark" src="icon-64.png" alt="">
+  <h1>Your R&amp;O add-in is online</h1>
+  <p class="lead">This page makes the small file that tells Excel where the R&amp;O panel lives.</p>
+  <p class="check" id="check">Checking the add-in files…</p>
+  <ol>
+    <li><strong>Download your manifest</strong>
+      It already contains this website's address, so there is nothing to edit.<br>
+      <button id="dl">Download manifest.xml</button>
+    </li>
+    <li><strong>Upload it to Excel</strong>
+      Open RandO_Forecast_Input.xlsx in Excel for the web. Go to Home, then Add-ins, then More Add-ins (on some screens: Insert, then Add-ins). Choose My Add-ins, then Upload My Add-in, select <code>manifest.xml</code> and press Upload.
+    </li>
+    <li><strong>Open the panel</strong>
+      A button called R&amp;O Forecast appears on the Home tab. Click it to open the panel on the right.
+    </li>
+  </ol>
+  <p class="small">If Excel says the manifest is invalid, use this simpler version instead. The panel then opens straight after uploading, without a ribbon button.<br>
+  <button class="alt" id="dlSimple">Download simple manifest (Plan B)</button></p>
+  <p class="small">Your address: <code id="base"></code></p>
+</main>
+<script>
+(function () {
+  var TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<OfficeApp xmlns=\"http://schemas.microsoft.com/office/appforoffice/1.1\"\n           xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n           xmlns:bt=\"http://schemas.microsoft.com/office/officeappbasictypes/1.0\"\n           xmlns:ov=\"http://schemas.microsoft.com/office/taskpaneappversionoverrides\"\n           xsi:type=\"TaskPaneApp\">\n  <Id>7b1d4c52-3f0e-4c9a-9a51-2f6c8e0d4a17</Id>\n  <Version>1.0.0.0</Version>\n  <ProviderName>Prospiant Finance</ProviderName>\n  <DefaultLocale>en-US</DefaultLocale>\n  <DisplayName DefaultValue=\"R&amp;O Forecast\"/>\n  <Description DefaultValue=\"Submit R&amp;O project forecasts from Excel to the SQL database.\"/>\n  <IconUrl DefaultValue=\"{BASE}icon-32.png\"/>\n  <HighResolutionIconUrl DefaultValue=\"{BASE}icon-64.png\"/>\n  <SupportUrl DefaultValue=\"{BASE}index.html\"/>\n  <Hosts>\n    <Host Name=\"Workbook\"/>\n  </Hosts>\n  <DefaultSettings>\n    <SourceLocation DefaultValue=\"{BASE}taskpane.html\"/>\n  </DefaultSettings>\n  <Permissions>ReadWriteDocument</Permissions>\n  <VersionOverrides xmlns=\"http://schemas.microsoft.com/office/taskpaneappversionoverrides\" xsi:type=\"VersionOverridesV1_0\">\n    <Hosts>\n      <Host xsi:type=\"Workbook\">\n        <DesktopFormFactor>\n          <GetStarted>\n            <Title resid=\"RO.GetStarted.Title\"/>\n            <Description resid=\"RO.GetStarted.Description\"/>\n            <LearnMoreUrl resid=\"RO.Help.Url\"/>\n          </GetStarted>\n          <FunctionFile resid=\"RO.Commands.Url\"/>\n          <ExtensionPoint xsi:type=\"PrimaryCommandSurface\">\n            <OfficeTab id=\"TabHome\">\n              <Group id=\"RO.Group\">\n                <Label resid=\"RO.Group.Label\"/>\n                <Icon>\n                  <bt:Image size=\"16\" resid=\"RO.Icon.16\"/>\n                  <bt:Image size=\"32\" resid=\"RO.Icon.32\"/>\n                  <bt:Image size=\"80\" resid=\"RO.Icon.80\"/>\n                </Icon>\n                <Control xsi:type=\"Button\" id=\"RO.OpenPanel\">\n                  <Label resid=\"RO.Button.Label\"/>\n                  <Supertip>\n                    <Title resid=\"RO.Button.Label\"/>\n                    <Description resid=\"RO.Button.Tip\"/>\n                  </Supertip>\n                  <Icon>\n                    <bt:Image size=\"16\" resid=\"RO.Icon.16\"/>\n                    <bt:Image size=\"32\" resid=\"RO.Icon.32\"/>\n                    <bt:Image size=\"80\" resid=\"RO.Icon.80\"/>\n                  </Icon>\n                  <Action xsi:type=\"ShowTaskpane\">\n                    <TaskpaneId>ROPanel</TaskpaneId>\n                    <SourceLocation resid=\"RO.Taskpane.Url\"/>\n                  </Action>\n                </Control>\n              </Group>\n            </OfficeTab>\n          </ExtensionPoint>\n        </DesktopFormFactor>\n      </Host>\n    </Hosts>\n    <Resources>\n      <bt:Images>\n        <bt:Image id=\"RO.Icon.16\" DefaultValue=\"{BASE}icon-16.png\"/>\n        <bt:Image id=\"RO.Icon.32\" DefaultValue=\"{BASE}icon-32.png\"/>\n        <bt:Image id=\"RO.Icon.80\" DefaultValue=\"{BASE}icon-80.png\"/>\n      </bt:Images>\n      <bt:Urls>\n        <bt:Url id=\"RO.Commands.Url\" DefaultValue=\"{BASE}commands.html\"/>\n        <bt:Url id=\"RO.Taskpane.Url\" DefaultValue=\"{BASE}taskpane.html\"/>\n        <bt:Url id=\"RO.Help.Url\" DefaultValue=\"{BASE}index.html\"/>\n      </bt:Urls>\n      <bt:ShortStrings>\n        <bt:String id=\"RO.Group.Label\" DefaultValue=\"R&amp;O\"/>\n        <bt:String id=\"RO.Button.Label\" DefaultValue=\"R&amp;O Forecast\"/>\n        <bt:String id=\"RO.GetStarted.Title\" DefaultValue=\"R&amp;O Forecast is ready\"/>\n      </bt:ShortStrings>\n      <bt:LongStrings>\n        <bt:String id=\"RO.Button.Tip\" DefaultValue=\"Open the R&amp;O panel to refresh data, submit a project, or clear the form.\"/>\n        <bt:String id=\"RO.GetStarted.Description\" DefaultValue=\"Open it from Home, R&amp;O Forecast.\"/>\n      </bt:LongStrings>\n    </Resources>\n  </VersionOverrides>\n</OfficeApp>\n";
+  var base = location.href.replace(/[#?].*$/, "").replace(/[^\/]*$/, "");
+  document.getElementById("base").textContent = base;
+
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
+  function build(simple) {
+    var xml = TEMPLATE.split("{BASE}").join(esc(base));
+    if (simple) { xml = xml.replace(/\s*<VersionOverrides[\s\S]*<\/VersionOverrides>/, ""); }
+    return xml;
+  }
+  function download(simple) {
+    var blob = new Blob([build(simple)], { type: "application/xml" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "manifest.xml";
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  document.getElementById("dl").addEventListener("click", function () { download(false); });
+  document.getElementById("dlSimple").addEventListener("click", function () { download(true); });
+
+  var check = document.getElementById("check");
+  if (location.protocol !== "https:") {
+    check.className = "check bad";
+    check.textContent = "This page must be opened over https (for example from GitHub Pages). Excel only loads add-ins from https addresses.";
+    return;
+  }
+  var files = ["taskpane.html", "ro-core.js", "commands.html", "icon-16.png", "icon-32.png", "icon-64.png", "icon-80.png"];
+  Promise.all(files.map(function (f) {
+    return fetch(base + f, { method: "GET", cache: "no-store" }).then(function (r) { return r.ok ? null : f; }).catch(function () { return f; });
+  })).then(function (missing) {
+    missing = missing.filter(Boolean);
+    if (missing.length) {
+      check.className = "check bad";
+      check.textContent = "These files are missing from the website: " + missing.join(", ") + ". Upload them next to index.html, wait a minute, and reload this page.";
+    } else {
+      check.textContent = "All 7 add-in files found. You're ready for step 1.";
+    }
+  });
+})();
+</script>
+</body>
+</html>
