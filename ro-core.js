@@ -168,13 +168,93 @@
       await Excel.run(async function (ctx) {
         var ws = ctx.workbook.worksheets.getItemOrNullObject("Input");
         await ctx.sync();
-        if (!ws.isNullObject) { queueStatus(ws, res); await ctx.sync(); }
+        if (!ws.isNullObject) {
+          await editInput(ctx, ws, async function () { queueStatus(ws, res); await ctx.sync(); });
+        }
       });
     } catch (e) { /* the panel still shows the message */ }
   }
 
   async function tryClearFilter(ctx, ws) {
     try { ws.autoFilter.clearCriteria(); await ctx.sync(); } catch (e) { /* no filter to clear */ }
+  }
+
+
+  // ---------------------------------------------------------------- sheet protection
+  // The Input sheet stays protected. Only the cells a person should type in are unlocked:
+  // Segment, Type, Name, R&O Month, Total Value, GM, Comment, Submitted By, the OPEN months,
+  // and Project ID for New projects. Locked months, Previous, Change and Status are read-only.
+  var PROTECT_OPTIONS = {
+    allowAutoFilter: false, allowDeleteColumns: false, allowDeleteRows: false, allowEditObjects: false,
+    allowEditScenarios: false, allowFormatCells: false, allowFormatColumns: true, allowFormatRows: true,
+    allowInsertColumns: false, allowInsertHyperlinks: false, allowInsertRows: false,
+    allowPivotTables: false, allowSort: false
+  };
+  var editDepth = 0; // > 0 while one of our own actions is changing the sheet
+
+  function queueLocks(ws, ptype, roMonth) {
+    var ro = Number(roMonth) || 0;
+    ["D5", "D6", "D7", "D9", "D11", "D12", "D13", "D14"].forEach(function (a) {
+      ws.getRange(a).format.protection.locked = false;
+    });
+    ws.getRange("D8").format.protection.locked = cleanText(ptype) !== "New";
+    for (var i = 0; i < 12; i++) {
+      var open = ro > 0 && i + 1 >= ro;
+      ws.getRange("D" + (17 + i)).format.protection.locked = !open;
+    }
+    ws.getRange("D10").format.protection.locked = true;
+    ws.getRange("E17:G29").format.protection.locked = true;
+    ws.getRange("D29").format.protection.locked = true;
+    ws.getRange("I7:L12").format.protection.locked = true;
+  }
+
+  // unprotect -> do the work -> re-apply locks and protect again (even if the work failed)
+  async function editInput(ctx, ws, work) {
+    editDepth++;
+    try {
+      ws.protection.load("protected");
+      await ctx.sync();
+      if (ws.protection.protected) {
+        ws.protection.unprotect();
+        try { await ctx.sync(); } catch (e) {
+          throw new Error("The Input sheet is protected with a password. Remove it (Review, Unprotect Sheet) and try again.");
+        }
+      }
+      try {
+        return await work();
+      } finally {
+        try {
+          var key = ws.getRange("D6:D9"); key.load("values");
+          await ctx.sync();
+          queueLocks(ws, key.values[0][0], key.values[3][0]);
+          ws.protection.protect(PROTECT_OPTIONS);
+          await ctx.sync();
+        } catch (e) { /* leave it unprotected rather than break the action */ }
+      }
+    } finally {
+      editDepth--;
+    }
+  }
+
+  // re-applies the locks for the current R&O month (called when the panel opens and when D6/D9 change)
+  async function applyLocks() {
+    return Excel.run(async function (ctx) {
+      var ws = ctx.workbook.worksheets.getItemOrNullObject("Input");
+      await ctx.sync();
+      if (ws.isNullObject) { return; }
+      await editInput(ctx, ws, async function () {});
+    });
+  }
+
+  function colIdx(c) { var n = 0; for (var i = 0; i < c.length; i++) { n = n * 26 + c.charCodeAt(i) - 64; } return n; }
+  // does a changed address include Project Type (D6) or R&O Month (D9)?
+  function touchesKeyCells(addr) {
+    return String(addr || "").split(",").some(function (part) {
+      var m = /^\$?([A-Z]+)\$?(\d+)(?::\$?([A-Z]+)\$?(\d+))?$/.exec(part.replace(/^.*!/, "").trim());
+      if (!m) { return true; }
+      var c1 = colIdx(m[1]), r1 = +m[2], c2 = m[3] ? colIdx(m[3]) : c1, r2 = m[4] ? +m[4] : r1;
+      return c1 <= 4 && 4 <= c2 && ((r1 <= 6 && 6 <= r2) || (r1 <= 9 && 9 <= r2));
+    });
   }
 
   // ---------------------------------------------------------------- database
@@ -235,6 +315,7 @@
       assertSheets(sh);
       var cfg = readCfg(cfgR.values);
       var data = await callRpc(cfg, "ro_get_reference_data", {});
+      return editInput(ctx, sh.Input, async function () {
       await tryClearFilter(ctx, sh.MasterTable);
       var n = queueWriteReference(sh, data, used);
       queueResetForm(sh);
@@ -245,6 +326,7 @@
       queueStatus(sh.Input, res);
       await ctx.sync();
       return res;
+      });
     });
   }
 
@@ -260,6 +342,7 @@
       var used = sh.MasterTable.getUsedRangeOrNullObject(true); used.load("rowIndex,rowCount");
       await ctx.sync();
       assertSheets(sh);
+      return editInput(ctx, sh.Input, async function () {
 
       var t = top.values;
       var segment = cleanText(t[0][0]), ptype = cleanText(t[1][0]), name = cleanText(t[2][0]);
@@ -346,12 +429,12 @@
       queueStatus(sh.Input, out);
       await ctx.sync();
       return out;
+      });
     });
   }
 
   // ---------------------------------------------------------------- 3. Clear form
-  // keeps Segment, R&O Month and Submitted By; empties the project; puts EVERY formula on the form back
-  // (so a pasted-over cell, e.g. in the Previous column, is repaired automatically)
+  // keeps Segment, R&O Month and Submitted By; empties the project; puts the auto-fill formulas back
   function queueResetForm(sh) {
     sh.Input.getRange("D6").values = [["Existing"]];
     sh.Input.getRange("D7").values = [[""]];
@@ -367,11 +450,13 @@
       var sh = getSheets(ctx);
       await ctx.sync();
       assertSheets(sh);
-      queueResetForm(sh);
-      var res = result("info", "Form cleared", ["Pick a project name, or switch Project Type to New to add a project."]);
-      queueStatus(sh.Input, res);
-      await ctx.sync();
-      return res;
+      return editInput(ctx, sh.Input, async function () {
+        queueResetForm(sh);
+        var res = result("info", "Form cleared", ["Pick a project name, or switch Project Type to New to add a project."]);
+        queueStatus(sh.Input, res);
+        await ctx.sync();
+        return res;
+      });
     });
   }
 
@@ -441,9 +526,16 @@
         await ctx.sync();
         if (ws.isNullObject) { return; }
         var timer = null;
-        ws.onChanged.add(function () {
+        ws.onChanged.add(function (ev) {
+          var relock = touchesKeyCells(ev && ev.address);
           clearTimeout(timer);
-          timer = setTimeout(callback, 250);
+          timer = setTimeout(function () {
+            if (relock && editDepth === 0) {
+              applyLocks().catch(function () {}).then(callback);
+            } else {
+              callback();
+            }
+          }, 250);
           return Promise.resolve();
         });
         await ctx.sync();
@@ -453,7 +545,8 @@
 
   root.RO = {
     refresh: refresh, submit: submit, clearForm: clearForm, readSettings: readSettings,
-    saveSettings: saveSettings, readForm: readForm, watchForm: watchForm,
+    saveSettings: saveSettings, readForm: readForm, watchForm: watchForm, applyLocks: applyLocks,
+    _touchesKeyCells: touchesKeyCells,
     writeStatusOnly: writeStatusOnly, errorText: errorText, result: result, MONTHS: MONTHS
   };
   if (typeof module !== "undefined" && module.exports) { module.exports = root.RO; }

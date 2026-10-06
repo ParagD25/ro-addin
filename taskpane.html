@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>R&amp;O Forecast</title>
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-<script src="ro-core.js?v=3"></script>
+<script src="ro-core.js?v=4"></script>
 <style>
   :root {
     --leaf: #2F7A28;        /* buttons, open months */
@@ -241,6 +241,7 @@
         setConn("", s.lastRefresh && s.lastRefresh !== "never" ? "Data as of " + s.lastRefresh + ". Refresh to check the connection" : "Not refreshed yet. Press Refresh data");
       }
     } catch (e) { /* keep defaults */ }
+    await RO.applyLocks().catch(function () {});
     renderForm();
     RO.watchForm(renderForm);
   });
