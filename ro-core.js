@@ -23,7 +23,59 @@
     ["D25", "=E25"],
     ["D26", "=E26"],
     ["D27", "=E27"],
-    ["D28", "=E28"]
+    ["D28", "=E28"],
+    ["P2", "=IFERROR(MATCH($D$5&\"|\"&$D$7,MasterTable!$Y:$Y,0),0)"],
+    ["P3", "=IFERROR(--$D$9,0)"],
+    ["P4", "=AND($D$6=\"Existing\",$P$2>0)"],
+    ["E5", "=IF($D$5=\"\",\"Choose a segment\",\"\")"],
+    ["E6", "=IF($D$6=\"New\",\"You type the name and ID\",\"Values load automatically\")"],
+    ["E7", "=IF($D$7=\"\",\"\",IF($D$6=\"Existing\",IF($P$2>0,\"✓ Found in master table\",\"✗ Not in \"&$D$5&\" - pick from the list\"),IF($P$2>0,\"✗ Already exists - switch to Existing\",\"✓ New project name\")))"],
+    ["E8", "=IF($D$6=\"Existing\",\"Auto-filled from master table\",\"← Type the new Project ID\")"],
+    ["E9", "=IF($P$3=0,\"← Pick 1-12\",IF($P$3=1,\"No months locked\",\"Jan - \"&INDEX(Lists!$E$2:$E$13,$P$3-1)&\" locked\"))"],
+    ["D10", "=IF($P$3=0,\"\",EOMONTH(DATE(Settings!$C$5,$P$3,1),0))"],
+    ["E11", "=IF($P$4,\"Previous: \"&TEXT(INDEX(MasterTable!$F:$F,$P$2),\"#,##0.00\"),\"Full project value\")"],
+    ["E12", "=IF($P$4,\"Previous: \"&TEXT(INDEX(MasterTable!$G:$G,$P$2),\"0.0%\"),\"e.g. 32%\")"],
+    ["I13", "=\"Data as of: \"&IF(ISNUMBER(Settings!$C$6),TEXT(Settings!$C$6,\"dd-mmm-yyyy hh:mm\"),Settings!$C$6)"],
+    ["E14", "=IF($D$14=\"\",\"← Required: your name\",\"\")"],
+    ["E17", "=IF($P$4,INDEX(MasterTable!$H:$H,$P$2),\"\")"],
+    ["F17", "=IF(AND(ISNUMBER(D17),ISNUMBER(E17)),D17-E17,\"\")"],
+    ["G17", "=IF($P$3=0,\"\",IF($B17<$P$3,\"Locked\",\"Open\"))"],
+    ["E18", "=IF($P$4,INDEX(MasterTable!$I:$I,$P$2),\"\")"],
+    ["F18", "=IF(AND(ISNUMBER(D18),ISNUMBER(E18)),D18-E18,\"\")"],
+    ["G18", "=IF($P$3=0,\"\",IF($B18<$P$3,\"Locked\",\"Open\"))"],
+    ["E19", "=IF($P$4,INDEX(MasterTable!$J:$J,$P$2),\"\")"],
+    ["F19", "=IF(AND(ISNUMBER(D19),ISNUMBER(E19)),D19-E19,\"\")"],
+    ["G19", "=IF($P$3=0,\"\",IF($B19<$P$3,\"Locked\",\"Open\"))"],
+    ["E20", "=IF($P$4,INDEX(MasterTable!$K:$K,$P$2),\"\")"],
+    ["F20", "=IF(AND(ISNUMBER(D20),ISNUMBER(E20)),D20-E20,\"\")"],
+    ["G20", "=IF($P$3=0,\"\",IF($B20<$P$3,\"Locked\",\"Open\"))"],
+    ["E21", "=IF($P$4,INDEX(MasterTable!$L:$L,$P$2),\"\")"],
+    ["F21", "=IF(AND(ISNUMBER(D21),ISNUMBER(E21)),D21-E21,\"\")"],
+    ["G21", "=IF($P$3=0,\"\",IF($B21<$P$3,\"Locked\",\"Open\"))"],
+    ["E22", "=IF($P$4,INDEX(MasterTable!$M:$M,$P$2),\"\")"],
+    ["F22", "=IF(AND(ISNUMBER(D22),ISNUMBER(E22)),D22-E22,\"\")"],
+    ["G22", "=IF($P$3=0,\"\",IF($B22<$P$3,\"Locked\",\"Open\"))"],
+    ["E23", "=IF($P$4,INDEX(MasterTable!$N:$N,$P$2),\"\")"],
+    ["F23", "=IF(AND(ISNUMBER(D23),ISNUMBER(E23)),D23-E23,\"\")"],
+    ["G23", "=IF($P$3=0,\"\",IF($B23<$P$3,\"Locked\",\"Open\"))"],
+    ["E24", "=IF($P$4,INDEX(MasterTable!$O:$O,$P$2),\"\")"],
+    ["F24", "=IF(AND(ISNUMBER(D24),ISNUMBER(E24)),D24-E24,\"\")"],
+    ["G24", "=IF($P$3=0,\"\",IF($B24<$P$3,\"Locked\",\"Open\"))"],
+    ["E25", "=IF($P$4,INDEX(MasterTable!$P:$P,$P$2),\"\")"],
+    ["F25", "=IF(AND(ISNUMBER(D25),ISNUMBER(E25)),D25-E25,\"\")"],
+    ["G25", "=IF($P$3=0,\"\",IF($B25<$P$3,\"Locked\",\"Open\"))"],
+    ["E26", "=IF($P$4,INDEX(MasterTable!$Q:$Q,$P$2),\"\")"],
+    ["F26", "=IF(AND(ISNUMBER(D26),ISNUMBER(E26)),D26-E26,\"\")"],
+    ["G26", "=IF($P$3=0,\"\",IF($B26<$P$3,\"Locked\",\"Open\"))"],
+    ["E27", "=IF($P$4,INDEX(MasterTable!$R:$R,$P$2),\"\")"],
+    ["F27", "=IF(AND(ISNUMBER(D27),ISNUMBER(E27)),D27-E27,\"\")"],
+    ["G27", "=IF($P$3=0,\"\",IF($B27<$P$3,\"Locked\",\"Open\"))"],
+    ["E28", "=IF($P$4,INDEX(MasterTable!$S:$S,$P$2),\"\")"],
+    ["F28", "=IF(AND(ISNUMBER(D28),ISNUMBER(E28)),D28-E28,\"\")"],
+    ["G28", "=IF($P$3=0,\"\",IF($B28<$P$3,\"Locked\",\"Open\"))"],
+    ["D29", "=SUM(D17:D28)"],
+    ["E29", "=IF($P$4,SUM(E17:E28),\"\")"],
+    ["F29", "=IF(ISNUMBER(E29),D29-E29,\"\")"]
   ];
   var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var SHEETS = ["Input", "MasterTable", "Settings", "Lists"];
@@ -185,8 +237,10 @@
       var data = await callRpc(cfg, "ro_get_reference_data", {});
       await tryClearFilter(ctx, sh.MasterTable);
       var n = queueWriteReference(sh, data, used);
+      queueResetForm(sh);
       var res = result("ok", "Data refreshed at " + nowText(),
-        [n + " projects across " + (data.segments || []).length + " segments loaded from the database."]);
+        [n + " projects across " + (data.segments || []).length + " segments loaded from the database.",
+         "Form cleared. Pick a project to start."]);
       res.projects = n;
       queueStatus(sh.Input, res);
       await ctx.sync();
@@ -296,18 +350,24 @@
   }
 
   // ---------------------------------------------------------------- 3. Clear form
+  // keeps Segment, R&O Month and Submitted By; empties the project; puts EVERY formula on the form back
+  // (so a pasted-over cell, e.g. in the Previous column, is repaired automatically)
+  function queueResetForm(sh) {
+    sh.Input.getRange("D6").values = [["Existing"]];
+    sh.Input.getRange("D7").values = [[""]];
+    sh.Input.getRange("D13").values = [[""]];
+    queueRestoreFormulas(sh.Input);
+    sh.Lists.getRange("G2").values = [[newToken()]];
+    sh.Input.activate();
+    sh.Input.getRange("D7").select();
+  }
+
   async function clearForm() {
     return Excel.run(async function (ctx) {
       var sh = getSheets(ctx);
       await ctx.sync();
       assertSheets(sh);
-      sh.Input.getRange("D6").values = [["Existing"]];
-      sh.Input.getRange("D7").values = [[""]];
-      sh.Input.getRange("D13").values = [[""]];
-      queueRestoreFormulas(sh.Input);
-      sh.Lists.getRange("G2").values = [[newToken()]];
-      sh.Input.activate();
-      sh.Input.getRange("D7").select();
+      queueResetForm(sh);
       var res = result("info", "Form cleared", ["Pick a project name, or switch Project Type to New to add a project."]);
       queueStatus(sh.Input, res);
       await ctx.sync();
@@ -352,9 +412,19 @@
       var top = ws.getRange("D5:D9"); top.load("values");
       var help = ws.getRange("P2:P4"); help.load("values");
       var cells = ws.getRange("D17:D28"); cells.load("formulas");
+      var head = ws.getRange("D8:D12"); head.load("formulas");
       await ctx.sync();
       var t = top.values, h = help.values, ro = Number(h[1][0]) || 0, loaded = h[2][0] === true;
+      var isF = function (x) { return typeof x === "string" && x.charAt(0) === "="; };
+      var typed = function (x) { return !isF(x) && x !== ""; };
+      var hf = head.formulas; // D8 id, D9 month, D10 date, D11 total value, D12 GM
+      var monthTyped = cells.formulas.some(function (r) { return typed(r[0]); });
+      var ptype = cleanText(t[1][0]);
+      var dirty = ptype === "New"
+        ? (cleanText(t[2][0]) !== "" || typed(hf[0][0]) || typed(hf[3][0]) || typed(hf[4][0]) || monthTyped)
+        : (loaded && (typed(hf[3][0]) || typed(hf[4][0]) || monthTyped));
       return {
+        dirty: dirty,
         segment: cleanText(t[0][0]), type: cleanText(t[1][0]), name: cleanText(t[2][0]),
         id: cleanText(t[3][0]), roMonth: ro, found: Number(h[0][0]) > 0,
         months: cells.formulas.map(function (r, i) {

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>R&amp;O Forecast</title>
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-<script src="ro-core.js"></script>
+<script src="ro-core.js?v=3"></script>
 <style>
   :root {
     --leaf: #2F7A28;        /* buttons, open months */
@@ -103,7 +103,7 @@
 
     <div class="msg" id="msg" role="status" aria-live="polite">
       <h2 id="msgTitle">Ready</h2>
-      <ul id="msgLines"><li>Pick a segment and project on the Input sheet, change the open months, then submit.</li></ul>
+      <ul id="msgLines"><li>Press Refresh data to load the latest projects, then pick a segment and project on the Input sheet.</li></ul>
     </div>
 
     <details id="settings">
@@ -206,7 +206,22 @@
     $("app").hidden = false;
 
     $("btnSubmit").addEventListener("click", function () { run(RO.submit, "Submitting…"); });
-    $("btnRefresh").addEventListener("click", function () { run(RO.refresh, "Loading the latest data…"); });
+    var armedAt = 0;
+    $("btnRefresh").addEventListener("click", async function () {
+      if (busy) { return; }
+      if (Date.now() - armedAt > 10000) {
+        var f = await RO.readForm().catch(function () { return null; });
+        if (f && f.dirty) {
+          armedAt = Date.now();
+          show(RO.result("warn", "You have unsaved changes", [
+            "Refresh data clears the form, so the numbers you typed would be lost.",
+            "Press Submit to database to keep them, or press Refresh data again to discard them."]));
+          return;
+        }
+      }
+      armedAt = 0;
+      run(RO.refresh, "Loading the latest data…");
+    });
     $("btnClear").addEventListener("click", function () { run(RO.clearForm, "Clearing…"); });
     $("btnSave").addEventListener("click", function () {
       run(function () { return RO.saveSettings($("url").value, $("key").value); }, "Connecting…");
